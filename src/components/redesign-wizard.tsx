@@ -327,7 +327,8 @@ export function RedesignWizard() {
     baseProject?: Project | null,
     showWaitVideo = false,
     displayCount = nextCount,
-    displayIndex = 1
+    displayIndex = 1,
+    additionalFiles: File[] = []
   ): Promise<Project | null> {
     const outputCount = typeof nextCount === "number" && Number.isFinite(nextCount) ? nextCount : count;
     const outputRolloutRequest = typeof nextRolloutRequest === "string" ? nextRolloutRequest : "";
@@ -400,7 +401,7 @@ export function RedesignWizard() {
 
     try {
       const form = new FormData();
-      const uploadFiles = await normalizeFilesForUpload(files);
+      const uploadFiles = await normalizeFilesForUpload([...files, ...additionalFiles]);
       if (abortController.signal.aborted) throw new DOMException("생성 요청을 취소했습니다.", "AbortError");
       setToast("원본 분석과 실제 이미지 생성을 시작합니다.");
       const knowledgeText = useSharedKnowledge
@@ -516,7 +517,7 @@ export function RedesignWizard() {
     }
   }
 
-  async function generateAdditionalSection() {
+  async function generateAdditionalSection(customPrompt = "", customImage: File | null = null) {
     const baseProject = currentProject;
     if (!baseProject || !baseProject.sections.length) {
       setToast("먼저 상세페이지를 생성해주세요.");
@@ -538,7 +539,7 @@ export function RedesignWizard() {
     }
 
     setToast(`S${nextSectionNumber} 섹션을 1장 추가합니다.`);
-    const nextProject = await generate(1, rolloutRequest, nextSectionNumber, baseProject, true, 1, 1);
+    const nextProject = await generate(1, customPrompt, nextSectionNumber, baseProject, false, 1, 1, customImage ? [customImage] : []);
     if (nextProject) {
       setToast("1장 추가가 완료되었습니다.");
     }
@@ -887,7 +888,7 @@ export function RedesignWizard() {
             onEditSection={editSection}
             onDeleteRevision={deleteSectionRevision}
             onGenerateRest={generateRemainingSections}
-            onAddSection={generateAdditionalSection}
+            onAddSection={(prompt, file) => generateAdditionalSection(prompt, file)}
             generating={generating}
             editingSectionId={editingSectionId}
           />
@@ -1944,10 +1945,14 @@ function Results({
   onEditSection: (sectionId: string, editRequest: string, model: Model, referenceImage?: string, baseImageUrl?: string) => void;
   onDeleteRevision: (sectionId: string, revisionId: string) => void;
   onGenerateRest: () => void;
-  onAddSection: () => void;
+  onAddSection: (prompt: string, file: File | null) => void;
   generating: boolean;
   editingSectionId: string | null;
 }) {
+  const [isAddingMode, setIsAddingMode] = React.useState(false);
+  const [addPrompt, setAddPrompt] = React.useState("");
+  const [addImage, setAddImage] = React.useState<File | null>(null);
+
   if (!project) {
     return <Card><CardContent>아직 생성된 프로젝트가 없습니다.</CardContent></Card>;
   }
@@ -1999,14 +2004,55 @@ function Results({
                 disabled={generating}
               />
             ))}
-            <button
-              onClick={onAddSection}
-              disabled={generating}
-              className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:bg-muted/30 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-            >
-              {generating ? <Loader2 className="size-10 animate-spin" /> : <Plus className="size-10" />}
-              <span className="text-sm font-bold">1장 더 추가하기</span>
-            </button>
+            {isAddingMode ? (
+              <div className="flex min-h-[360px] flex-col gap-4 rounded-xl border border-border bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-5 text-amber-500" />
+                  <h3 className="text-base font-bold">1장 더 추가하기</h3>
+                </div>
+                <Textarea 
+                  placeholder="추가할 섹션의 방향이나 카피를 적어주세요." 
+                  value={addPrompt} 
+                  onChange={(e) => setAddPrompt(e.target.value)} 
+                  className="h-24 resize-none text-sm"
+                  disabled={generating}
+                />
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">레퍼런스 이미지 (선택)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => setAddImage(e.target.files?.[0] || null)} 
+                    disabled={generating}
+                    className="block w-full text-xs text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                  />
+                </div>
+                <div className="mt-auto flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setIsAddingMode(false)} disabled={generating}>취소</Button>
+                  <Button 
+                    className="flex-1" 
+                    disabled={generating || !addPrompt.trim()} 
+                    onClick={() => {
+                      onAddSection(addPrompt, addImage);
+                      setIsAddingMode(false);
+                      setAddPrompt("");
+                      setAddImage(null);
+                    }}
+                  >
+                    {generating ? <Loader2 className="size-4 animate-spin" /> : "생성하기"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAddingMode(true)}
+                disabled={generating}
+                className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:bg-muted/30 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="size-10 animate-spin" /> : <Plus className="size-10" />}
+                <span className="text-sm font-bold">1장 더 추가하기</span>
+              </button>
+            )}
           </CardContent>
         </Card>
 
