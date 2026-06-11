@@ -338,32 +338,14 @@ async function generateGoogleImage({ apiKey, prompt, references }: { apiKey: str
     method: "POST",
     headers: {
       "x-goog-api-key": apiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ contents: [{ parts }] })
-  });
-
-  const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(withRequestId(data?.error?.message || "Google Nano Banana 2 생성 실패", response));
-  const imagePart = data?.candidates?.[0]?.content?.parts?.find((part: { inlineData?: { data?: string } }) => part.inlineData);
-  if (!imagePart?.inlineData?.data) throw new Error("Google 응답에 이미지 데이터가 없습니다.");
-  return {
-    mimeType: imagePart.inlineData.mimeType || "image/png",
-    buffer: Buffer.from(imagePart.inlineData.data, "base64")
-  };
-}
-
-function buildSections(
-  count: number,
-  startSection: number,
-  payload: { request: string; rolloutRequest: string; knowledgeText: string; productInfoText: string; options: { channel: string; ratio: string; count: number; backgroundColor: string } },
-  analysis: unknown,
-  modelInfo: ReturnType<typeof modelMeta>
-): Section[] {
-  return sectionTemplates(count, startSection).map((template) => {
-    const bgColorInstruction = payload.options.backgroundColor === 'white' ? '전체 기본 바탕 화면을 흰색(White)으로 강제 적용한다.' 
-      : payload.options.backgroundColor === 'black' ? '전체 기본 바탕 화면을 검정(Black)으로 강제 적용한다.' 
-      : '전체 디자인의 톤앤매너는 레퍼런스 디자인을 따르되, 사용자가 선호하는 컬러를 요청하거나 이미지를 별도로 제공할 경우 사용자가 요청하는 컬러의 톤앤매너를 우선으로 제작한다.';
+          const analysisObj = typeof analysis === "object" && analysis !== null ? analysis as Record<string, any> : {};
+    const mood = analysisObj.mood || "분석 없음";
+    const mainColor = analysisObj.color_palette?.main || "분석 없음";
+    const backgroundMood = analysisObj.color_palette?.background || "분석 없음";
+    
+    const toneSyncInstruction = startSection > 1 
+      ? `🚨 [강력한 톤앤매너 유지 규칙] 이 이미지는 기존 섹션들에 이어지는 추가 섹션입니다. 이전 섹션들과의 완벽한 일체감을 위해 업로드된 기존 결과물 이미지와 기존 분석 데이터(배경 무드: ${backgroundMood}, 포인트 컬러: ${mainColor}, 전체 분위기: ${mood})를 참고하여 무조건 똑같은 톤앤매너를 유지하세요. 기존이 다크모드/블랙 톤이면 무조건 다크/블랙 배경을 깔고, 라이트 톤이면 라이트를 유지해야 합니다.`
+      : "전체 연결 규칙: 여러 장을 이어 붙였을 때 하나의 상세페이지처럼 보여야 한다. 동일한 브랜드 색, 폰트 감각, 제품 사진 톤은 유지하되 각 섹션의 레이아웃은 반드시 다르게 구성한다. 모든 섹션이 큰 상단 헤드라인+중앙 제품컷으로 반복되면 안 된다.";
 
     const promptText = [
       "너는 커머스 상세페이지 제작 이미지 생성 엔진이다.",
@@ -382,7 +364,35 @@ function buildSections(
       `배경 및 톤앤매너 규칙: ${bgColorInstruction} 또한 히어로 섹션의 핵심 포인트 컬러가 전체 상세페이지(나머지 섹션들)에 통일성 있게 적용되도록 하라.`,
       "브랜드명 금지 규칙: '한이룸', '한이룸의', '한이룸 스킨', 'HANEERUM', 'Haneerum', 'HR'은 서비스명 또는 도구명일 뿐이며 제품 브랜드가 아니다. 이 단어들을 이미지 안의 제품명, 브랜드명, 로고, 라벨, 헤드라인, 후기, FAQ, CTA, 패키지 텍스트로 절대 사용하지 않는다.",
       "브랜드 사용 규칙: 제품 브랜드명과 제품명은 업로드된 원본 상세페이지 또는 제품 패키지에서 확인되는 이름만 사용한다. 원본에서 확인되지 않는 새 브랜드명, 새 제품명, 새 로고를 만들지 않는다.",
-      "전체 연결 규칙: 여러 장을 이어 붙였을 때 하나의 상세페이지처럼 보여야 한다. 동일한 브랜드 색, 폰트 감각, 제품 사진 톤은 유지하되 각 섹션의 레이아웃은 반드시 다르게 구성한다. 모든 섹션이 큰 상단 헤드라인+중앙 제품컷으로 반복되면 안 된다.",
+      toneSyncInstruction,�거나 이미지를 별도로 제공할 경우 사용자가 요청하는 컬러의 톤앤매너를 우선으로 제작한다.';
+
+    const analysisObj = typeof analysis === "object" && analysis !== null ? analysis as Record<string, any> : {};
+    const mood = analysisObj.mood || "분석 없음";
+    const mainColor = analysisObj.color_palette?.main || "분석 없음";
+    const backgroundMood = analysisObj.color_palette?.background || "분석 없음";
+    
+    const toneSyncInstruction = startSection > 1 
+      ? `🚨 [강력한 톤앤매너 유지 규칙] 이 이미지는 기존 섹션들에 이어지는 추가 섹션입니다. 이전 섹션들과의 완벽한 일체감을 위해 업로드된 기존 결과물 이미지와 기존 분석 데이터(배경 무드: ${backgroundMood}, 포인트 컬러: ${mainColor}, 전체 분위기: ${mood})를 참고하여 무조건 똑같은 톤앤매너를 유지하세요. 기존이 다크모드/블랙 톤이면 무조건 다크/블랙 배경을 깔고, 라이트 톤이면 라이트를 유지해야 합니다.`
+      : "전체 연결 규칙: 여러 장을 이어 붙였을 때 하나의 상세페이지처럼 보여야 한다. 동일한 브랜드 색, 폰트 감각, 제품 사진 톤은 유지하되 각 섹션의 레이아웃은 반드시 다르게 구성한다. 모든 섹션이 큰 상단 헤드라인+중앙 제품컷으로 반복되면 안 된다.";
+
+    const promptText = [
+      "너는 커머스 상세페이지 제작 이미지 생성 엔진이다.",
+      `이미지 생성 모델: ${modelInfo.label} (${modelInfo.id})`,
+      "세로형 9:16 상세페이지 섹션 이미지 1장을 생성한다.",
+      `섹션: ${template.name}`,
+      `목적: ${template.purpose}`,
+      `권장 레이아웃: ${template.layout}`,
+      `판매 채널: ${payload.options.channel}`,
+      `추가 요청사항: ${payload.request || "전환율 중심으로 제작"}`,
+      payload.rolloutRequest ? `히어로 1장 검토 후 사용자가 요청한 반영사항: ${payload.rolloutRequest}` : "히어로 검토 후 반영사항: 없음",
+      payload.productInfoText ? `내 상품 정보 (실제 내용 생성 시 찰떡같이 결합할 핵심 정보): ${payload.productInfoText}` : "내 상품 정보: 없음",
+      payload.knowledgeText ? `참고 사전 지식 (보조 참고 자료): ${payload.knowledgeText.slice(0, 18000)}` : "참고 사전 지식: 없음",
+      `분석 요약: ${JSON.stringify(analysis).slice(0, 2400)}`,
+      "디자인 벤치마킹 및 내용 생성 규칙: 업로드된 레퍼런스 이미지에서는 [디자인 톤앤매너 및 레이아웃 구조]만 벤치마킹하라. 실제 알맹이 내용, 문구, 카피라이팅은 절대 원본 레퍼런스에서 베끼지 말고 [사용자가 입력한 내 상품 정보]를 바탕으로 찰떡같이 결합하라.",
+      `배경 및 톤앤매너 규칙: ${bgColorInstruction} 또한 히어로 섹션의 핵심 포인트 컬러가 전체 상세페이지(나머지 섹션들)에 통일성 있게 적용되도록 하라.`,
+      "브랜드명 금지 규칙: '한이룸', '한이룸의', '한이룸 스킨', 'HANEERUM', 'Haneerum', 'HR'은 서비스명 또는 도구명일 뿐이며 제품 브랜드가 아니다. 이 단어들을 이미지 안의 제품명, 브랜드명, 로고, 라벨, 헤드라인, 후기, FAQ, CTA, 패키지 텍스트로 절대 사용하지 않는다.",
+      "브랜드 사용 규칙: 제품 브랜드명과 제품명은 업로드된 원본 상세페이지 또는 제품 패키지에서 확인되는 이름만 사용한다. 원본에서 확인되지 않는 새 브랜드명, 새 제품명, 새 로고를 만들지 않는다.",
+      toneSyncInstruction,
       "섹션별 변화 규칙: 제품 위치, 정보 카드 모양, 아이콘 밀도, 배경 분할, CTA 위치, 타이포 크기 리듬을 섹션마다 다르게 한다. 같은 헤드라인 문구를 반복하지 말고, 섹션 목적에 맞는 새로운 제목을 쓴다.",
       "🚨목업 반복 금지 및 레퍼런스 활용 규칙🚨: 레퍼런스에 책 표지나 거대한 제품 목업 이미지가 있더라도, 그것을 화면 전체에 꽉 차게 그리는 것은 전체 상세페이지 중 단 하나의 섹션에서만 허용된다. 나머지 다른 모든 섹션에서는 제품 목업을 완전히 생략하거나 아주 조그맣게 1회만 배치하고, 대신 레퍼런스 이미지들의 다채로운 레이아웃(텍스트, 정보 카드, 아이콘 배치 등)을 적극적으로 벤치마킹하여 구성하라. 모든 섹션이 똑같은 책 표지나 포스터 구도로 반복되면 절대 안 된다.",
       "안전 규칙: 원본 제품컷/색감/핵심 정보는 보존한다. 근거 없는 수치, 리뷰, 인증, 효과를 만들지 않는다. 한 장에 메시지 하나만 담는다. 한국어 문구는 크게, 불릿은 3개 이하로 배치한다. 복잡한 배경과 작은 글씨를 피한다. 규제 리스크가 있으면 안전한 표현으로 완화한다."
