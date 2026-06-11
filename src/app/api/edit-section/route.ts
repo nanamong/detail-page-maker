@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const prompt = [
       "너는 커머스 상세페이지 섹션 이미지 편집 엔진이다.",
       "첨부된 9:16 상세페이지 섹션 이미지를 기반으로 같은 제품과 전체 톤앤매너를 유지하면서 필요한 부분만 편집한다.",
-      `프로젝트: ${project.title || "상세페이지 리디자인"}`,
+      `프로젝트: ${project.title || "상세페이지 제작"}`,
       `판매 채널: ${project.channel || "스마트스토어"}`,
       `섹션: ${section.id || ""} ${section.name || ""}`,
       `섹션 목적: ${section.purpose || ""}`,

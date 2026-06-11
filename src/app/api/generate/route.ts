@@ -165,9 +165,9 @@ async function buildKnowledgeContext({
 
   try {
     const query = [
-      "상세페이지 리디자인 CRO 지식 검색",
+      "상세페이지 제작 CRO 지식 검색",
       `판매 채널: ${channel}`,
-      `추가 요청사항: ${requestText || "전환율 중심 리디자인"}`,
+      `추가 요청사항: ${requestText || "전환율 중심 제작"}`,
       rolloutRequest ? `히어로 검토 후 요청: ${rolloutRequest}` : ""
     ].filter(Boolean).join("\n");
     const chunks = await retrieveKnowledge(query, 8);
@@ -206,7 +206,7 @@ async function analyzeSource({
     "실제 알맹이 내용과 카피라이팅은 [사용자가 입력한 내 상품 정보]를 바탕으로 찰떡같이 결합하여 결과물을 만들어라.",
     "근거 없는 수치/효과/리뷰/인증을 만들지 말고, 위험 표현은 안전하게 완화하라.",
     `판매 채널: ${payload.options.channel}`,
-    `추가 요청사항: ${payload.request || "전환율 중심으로 리디자인"}`,
+    `추가 요청사항: ${payload.request || "전환율 중심으로 제작"}`,
     payload.rolloutRequest ? `히어로 검토 후 나머지 섹션에 반영할 요청: ${payload.rolloutRequest}` : "히어로 검토 후 요청: 없음",
     payload.productInfoText ? `내 상품 정보 (카피라이팅 최우선 반영):\n${payload.productInfoText}` : "내 상품 정보: 없음",
     payload.knowledgeText ? `사용자 사전 지식 (참고 자료):\n${payload.knowledgeText.slice(0, 30000)}` : "사용자 사전 지식: 없음",
@@ -352,14 +352,14 @@ function buildSections(
       : '전체 디자인의 톤앤매너는 레퍼런스 디자인을 따르되, 사용자가 선호하는 컬러를 요청하거나 이미지를 별도로 제공할 경우 사용자가 요청하는 컬러의 톤앤매너를 우선으로 제작한다.';
 
     const promptText = [
-      "너는 커머스 상세페이지 리디자인 이미지 생성 엔진이다.",
+      "너는 커머스 상세페이지 제작 이미지 생성 엔진이다.",
       `이미지 생성 모델: ${modelInfo.label} (${modelInfo.id})`,
       "세로형 9:16 상세페이지 섹션 이미지 1장을 생성한다.",
       `섹션: ${template.name}`,
       `목적: ${template.purpose}`,
       `권장 레이아웃: ${template.layout}`,
       `판매 채널: ${payload.options.channel}`,
-      `추가 요청사항: ${payload.request || "전환율 중심으로 리디자인"}`,
+      `추가 요청사항: ${payload.request || "전환율 중심으로 제작"}`,
       payload.rolloutRequest ? `히어로 1장 검토 후 사용자가 요청한 반영사항: ${payload.rolloutRequest}` : "히어로 검토 후 반영사항: 없음",
       payload.productInfoText ? `내 상품 정보 (실제 내용 생성 시 찰떡같이 결합할 핵심 정보): ${payload.productInfoText}` : "내 상품 정보: 없음",
       payload.knowledgeText ? `참고 사전 지식 (보조 참고 자료): ${payload.knowledgeText.slice(0, 18000)}` : "참고 사전 지식: 없음",
@@ -427,11 +427,11 @@ function inferProjectTitle(analysis: unknown, channel: string) {
   const category = pickString(product, ["category", "product_category"]);
 
   if (brand && productName) {
-    return productName.includes(brand) ? `${productName} 리디자인` : `${brand} ${productName} 리디자인`;
+    return productName.includes(brand) ? `${productName} 상세페이지 제작` : `${brand} ${productName} 상세페이지 제작`;
   }
-  if (productName) return `${productName} 리디자인`;
-  if (category) return `${category} 상세페이지 리디자인`;
-  return `${channel} 상세페이지 리디자인`;
+  if (productName) return `${productName} 상세페이지 제작`;
+  if (category) return `${category} 상세페이지 제작`;
+  return `${channel} 상세페이지 제작`;
 }
 
 function pickString(source: Record<string, unknown>, keys: string[]) {

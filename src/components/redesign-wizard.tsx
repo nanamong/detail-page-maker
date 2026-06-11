@@ -156,7 +156,7 @@ const hanirumYoutubeVideos = [
 ];
 
 const demoProjectTitles = new Set([
-  "프리미엄 영양제 상세페이지 리디자인",
+  "프리미엄 영양제 상세페이지 제작",
   "소형 가전 제품 USP 강화 작업",
   "뷰티 브랜드 첫 화면 3초 이해 개선"
 ]);
@@ -166,14 +166,14 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   const count = overrides.count || 1;
   return {
     id: overrides.id || `project-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    title: overrides.title || "스마트스토어 상세페이지 리디자인",
+    title: overrides.title || "스마트스토어 상세페이지 제작",
     channel: overrides.channel || "스마트스토어",
     model,
     count,
     ratio: "9:16",
     status: overrides.status || "완료",
     files: overrides.files || ["original-detail.pdf"],
-    request: overrides.request || "전환율 중심으로 리디자인",
+    request: overrides.request || "전환율 중심으로 제작",
     createdAt: overrides.createdAt || new Date().toISOString(),
     sections:
       overrides.sections ||
@@ -188,7 +188,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
           "",
           `section: ${name}`,
           `purpose: ${purpose}`,
-          "9:16 세로형 상세페이지 섹션. 원본 제품컷과 핵심 USP를 보존하고 구매전환 중심으로 리디자인."
+          "9:16 세로형 상세페이지 섹션. 원본 제품컷과 핵심 USP를 보존하고 구매전환 중심으로 상세페이지 제작."
         ].join("<br>")
       }))
   };
@@ -219,6 +219,7 @@ export function RedesignWizard() {
   const [channel, setChannel] = React.useState("스마트스토어");
   const [count, setCount] = React.useState(1);
   const [ratio, setRatio] = React.useState("9:16");
+  const [backgroundColor, setBackgroundColor] = React.useState("auto");
   const [files, setFiles] = React.useState<File[]>([]);
   const [knowledgeItems, setKnowledgeItems] = React.useState<KnowledgeItem[]>([]);
   const [productInfoText, setProductInfoText] = React.useState("");
@@ -1075,7 +1076,7 @@ function projectDisplayTitle(project: Partial<Project>) {
   if (inferred) return inferred;
   const current = String(project.title || "").trim();
   if (current && !current.includes(new Date().getFullYear().toString())) return current;
-  return current || `${project.channel || "스마트스토어"} 상세페이지 리디자인`;
+  return current || `${project.channel || "스마트스토어"} 상세페이지 제작`;
 }
 
 function mergeGeneratedProject(baseProject: Project, generatedProject: Project): Project {
@@ -1253,9 +1254,9 @@ function inferTitleFromAnalysis(analysis: unknown) {
   const productName = pickAnalysisText(product, ["product_name", "name", "product", "title"]);
   const category = pickAnalysisText(product, ["category", "product_category"]);
 
-  if (brand && productName) return productName.includes(brand) ? `${productName} 리디자인` : `${brand} ${productName} 리디자인`;
-  if (productName) return `${productName} 리디자인`;
-  if (category) return `${category} 상세페이지 리디자인`;
+  if (brand && productName) return productName.includes(brand) ? `${productName} 상세페이지 제작` : `${brand} ${productName} 상세페이지 제작`;
+  if (productName) return `${productName} 상세페이지 제작`;
+  if (category) return `${category} 상세페이지 제작`;
   return "";
 }
 
@@ -1491,7 +1492,7 @@ function Dashboard({
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>최근 리디자인 프로젝트</CardTitle>
+              <CardTitle>최근 상세페이지 제작 프로젝트</CardTitle>
               <CardDescription>업로드한 원본 자료를 기준으로 생성된 작업 목록</CardDescription>
             </div>
             <Badge variant="green">6~8장 기본</Badge>
@@ -1536,7 +1537,7 @@ function Dashboard({
               <div className="grid min-h-48 place-items-center rounded-md border border-dashed border-border bg-white/60 p-6 text-center">
                 <div>
                   <ImageIcon className="mx-auto mb-3 size-8 text-muted-foreground" />
-                  <strong className="text-sm">아직 작업한 리디자인 작업이 없습니다.</strong>
+                  <strong className="text-sm">아직 작업한 상세페이지 제작 내역이 없습니다.</strong>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                     새 프로젝트를 생성하면 이곳에 최근 작업이 표시됩니다.
                   </p>
@@ -1602,7 +1603,7 @@ function Workspace(props: {
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
   files: File[];
-  setFiles: (files: File[]) => void;
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   productInfoText: string;
   setProductInfoText: (value: string) => void;
   request: string;
@@ -1771,7 +1772,17 @@ function Workspace(props: {
             </CardHeader>
             <CardContent className="grid gap-4">
               <OptionGroup label="결과 장수" value={String(count)} options={[["1", "히어로 1장"], ["4", "기본 3~5장"], ["7", "확장 6~8장"], ["10", "최대 9~11장"]]} onChange={(value) => setCount(Number(value))} />
-              <OptionGroup label="출력 비율" value={ratio} options={[["9:16", "9:16"], ["1080×1920", "1080×1920"]]} onChange={setRatio} />
+              <OptionGroup label="출력 비율" value={ratio} options={[["9:16", "9:16"], ["1080x1920", "1080x1920"]]} onChange={setRatio} />
+              <OptionGroup
+                label="배경 컬러"
+                value={backgroundColor}
+                options={[
+                  ["auto", "레퍼런스(자동)"],
+                  ["black", "블랙"],
+                  ["white", "화이트"]
+                ]}
+                onChange={setBackgroundColor}
+              />
               <ChannelOptionGroup value={channel} onChange={setChannel} />
             </CardContent>
           </Card>
@@ -1920,7 +1931,7 @@ function Results({
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>리디자인 결과 {project.sections.length}장</CardTitle>
+              <CardTitle>상세페이지 제작 결과 {project.sections.length}장</CardTitle>
               <CardDescription>저장하면 대시보드의 최근 프로젝트에서 다시 열 수 있습니다.</CardDescription>
             </div>
             <Badge variant="green">{models[project.model].label}</Badge>
