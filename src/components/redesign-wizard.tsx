@@ -742,7 +742,7 @@ export function RedesignWizard() {
 
   return (
     <div className="grid min-h-screen grid-cols-[248px_minmax(0,1fr)] max-[1120px]:grid-cols-1">
-      <aside className="sticky top-0 h-screen border-r border-border bg-white/75 p-5 backdrop-blur max-[1120px]:static max-[1120px]:h-auto max-[1120px]:border-b max-[1120px]:border-r-0">
+      <aside className="sticky top-0 flex h-screen flex-col border-r border-border bg-white/75 p-5 backdrop-blur max-[1120px]:static max-[1120px]:h-auto max-[1120px]:border-b max-[1120px]:border-r-0">
         <button
           type="button"
           className="mb-6 flex items-center gap-3 rounded-md text-left transition hover:opacity-75"
@@ -786,6 +786,9 @@ export function RedesignWizard() {
             
           </CardContent>
         </Card>
+        <div className="mt-auto pt-6 text-[10px] leading-tight text-muted-foreground/50 max-[1120px]:hidden">
+          이 앱은 한이룸의 상세페이지 리디자인 마법사 1.0을 리믹스 및 커스터마이징하여 제작되었습니다.
+        </div>
       </aside>
 
       <main className="min-w-0 p-6 max-md:p-4">
