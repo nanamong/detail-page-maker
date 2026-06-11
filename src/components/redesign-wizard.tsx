@@ -444,6 +444,7 @@ export function RedesignWizard() {
 
       const project: Project = {
         ...data.project,
+        count: displayCount,
         title: projectDisplayTitle(data.project),
         sections: data.project.sections.map((section: Record<string, string>) => ({
           id: section.section_id,
@@ -831,7 +832,7 @@ export function RedesignWizard() {
             knowledgeAccessKey={knowledgeAccessKey}
             setKnowledgeAccessKey={setKnowledgeAccessKey}
             generating={generating}
-            onGenerate={() => generate()}
+            onGenerate={() => generate(1, "", 1, null, false, count)}
           />
         )}
         {view === "results" && (
