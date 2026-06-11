@@ -333,7 +333,7 @@ export function RedesignWizard() {
     const outputCount = typeof nextCount === "number" && Number.isFinite(nextCount) ? nextCount : count;
     const outputRolloutRequest = typeof nextRolloutRequest === "string" ? nextRolloutRequest : "";
 
-    if (files.length === 0) {
+    if (files.length === 0 && additionalFiles.length === 0) {
       setToast("기존 상세페이지 이미지 또는 PDF를 먼저 업로드해주세요.");
       setView("workspace");
       return null;
@@ -538,8 +538,21 @@ export function RedesignWizard() {
       return;
     }
 
+    let finalAdditionalFiles: File[] = [];
+    if (customImage) {
+      finalAdditionalFiles.push(customImage);
+    } else if (files.length === 0 && baseProject.sections[0]?.imageUrl) {
+      try {
+        const res = await fetch(baseProject.sections[0].imageUrl);
+        const blob = await res.blob();
+        finalAdditionalFiles.push(new File([blob], "reference.png", { type: blob.type }));
+      } catch (e) {
+        console.error("Fallback reference image fetch error", e);
+      }
+    }
+
     setToast(`S${nextSectionNumber} 섹션을 1장 추가합니다.`);
-    const nextProject = await generate(1, customPrompt, nextSectionNumber, baseProject, false, 1, 1, customImage ? [customImage] : []);
+    const nextProject = await generate(1, customPrompt, nextSectionNumber, baseProject, false, 1, 1, finalAdditionalFiles);
     if (nextProject) {
       setToast("1장 추가가 완료되었습니다.");
     }
@@ -2005,7 +2018,7 @@ function Results({
               />
             ))}
             {isAddingMode ? (
-              <div className="flex min-h-[360px] flex-col gap-4 rounded-xl border border-border bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 rounded-xl border border-border bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-5 text-amber-500" />
                   <h3 className="text-base font-bold">1장 더 추가하기</h3>
@@ -2014,7 +2027,7 @@ function Results({
                   placeholder="추가할 섹션의 방향이나 카피를 적어주세요." 
                   value={addPrompt} 
                   onChange={(e) => setAddPrompt(e.target.value)} 
-                  className="h-24 resize-none text-sm"
+                  className="h-20 resize-none text-sm"
                   disabled={generating}
                 />
                 <div className="space-y-2">
@@ -2024,10 +2037,10 @@ function Results({
                     accept="image/*" 
                     onChange={(e) => setAddImage(e.target.files?.[0] || null)} 
                     disabled={generating}
-                    className="block w-full text-xs text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                    className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
                   />
                 </div>
-                <div className="mt-auto flex gap-2">
+                <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setIsAddingMode(false)} disabled={generating}>취소</Button>
                   <Button 
                     className="flex-1" 
