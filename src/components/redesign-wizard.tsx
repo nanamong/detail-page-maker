@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   KeyRound,
   Loader2,
+  Plus,
   RefreshCw,
   Settings,
   Sparkles,
@@ -1972,7 +1973,6 @@ function Results({
     <section>
       <Topbar eyebrow="RESULTS" title={title}>
         <Button variant="secondary" onClick={onSave}><FileText className="size-4" />작업 저장</Button>
-        <Button variant="secondary" onClick={onAddSection} disabled={generating}><Sparkles className="size-4" />1장 더 추가하기</Button>
         <Button variant="secondary" onClick={() => onToast("히어로 1장 재생성은 다음 단계에서 연결할 예정입니다.")}><RefreshCw className="size-4" />히어로 다시 생성</Button>
         <Button onClick={downloadAllImages} disabled={downloadableSections.length === 0}><Download className="size-4" />전체 다운로드</Button>
       </Topbar>
@@ -1999,6 +1999,14 @@ function Results({
                 disabled={generating}
               />
             ))}
+            <button
+              onClick={onAddSection}
+              disabled={generating}
+              className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:bg-muted/30 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+            >
+              {generating ? <Loader2 className="size-10 animate-spin" /> : <Plus className="size-10" />}
+              <span className="text-sm font-bold">1장 더 추가하기</span>
+            </button>
           </CardContent>
         </Card>
 
