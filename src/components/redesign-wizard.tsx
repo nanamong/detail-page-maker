@@ -463,6 +463,7 @@ export function RedesignWizard() {
       setActiveProject(finalProject);
       setView("results");
       setToast(data.project.warning || `${models[selectedModel].label}로 ${project.sections.length}장 생성 완료`);
+      saveCurrentProject(finalProject, true);
       return finalProject;
     } catch (error) {
       reportClientLog("generate:error", {
@@ -511,6 +512,34 @@ export function RedesignWizard() {
       const nextProject = await generate(1, rolloutRequest, sectionNumber, workingProject, true, missingSections.length, index + 1);
       if (!nextProject) break;
       workingProject = nextProject;
+    }
+  }
+
+  async function generateAdditionalSection() {
+    const baseProject = currentProject;
+    if (!baseProject || !baseProject.sections.length) {
+      setToast("먼저 상세페이지를 생성해주세요.");
+      return;
+    }
+
+    let maxSectionNumber = 0;
+    for (const section of baseProject.sections) {
+      const sectionNumber = Number(section.id.replace(/\D/g, ""));
+      if (Number.isFinite(sectionNumber) && sectionNumber > maxSectionNumber) {
+        maxSectionNumber = sectionNumber;
+      }
+    }
+
+    const nextSectionNumber = maxSectionNumber + 1;
+    if (nextSectionNumber > 10) {
+      setToast("상세페이지는 최대 10장까지만 생성할 수 있습니다.");
+      return;
+    }
+
+    setToast(`S${nextSectionNumber} 섹션을 1장 추가합니다.`);
+    const nextProject = await generate(1, rolloutRequest, nextSectionNumber, baseProject, true, 1, 1);
+    if (nextProject) {
+      setToast("1장 추가가 완료되었습니다.");
     }
   }
 
@@ -607,10 +636,10 @@ export function RedesignWizard() {
     }
   }
 
-  async function saveCurrentProject(project?: Project | null) {
+  async function saveCurrentProject(project?: Project | null, isSilent = false) {
     const targetProject = project || currentProject;
     if (!targetProject) {
-      setToast("저장할 작업이 없습니다.");
+      if (!isSilent) setToast("저장할 작업이 없습니다.");
       return;
     }
 
@@ -619,9 +648,9 @@ export function RedesignWizard() {
       await saveProjectToDb(savedProject);
       setProjects((current) => [savedProject, ...current.filter((candidate) => candidate.id !== savedProject.id)].slice(0, 20));
       setActiveProject(savedProject);
-      setToast("작업을 저장했습니다. 대시보드에서 다시 열 수 있습니다.");
+      if (!isSilent) setToast("작업을 수동 저장했습니다. 대시보드에서 다시 열 수 있습니다.");
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "작업 저장 중 오류가 발생했습니다.");
+      if (!isSilent) setToast(error instanceof Error ? error.message : "작업 저장 중 오류가 발생했습니다.");
     }
   }
 
@@ -651,6 +680,7 @@ export function RedesignWizard() {
     const updatedProject = { ...project, sections: updatedSections, status: project.savedAt ? "수정됨" : project.status };
     setActiveProject(updatedProject as Project);
     setProjects((current) => [updatedProject as Project, ...current.filter((c) => c.id !== updatedProject.id)].slice(0, 20));
+    saveCurrentProject(updatedProject as Project, true);
   }
 
   async function editSection(sectionId: string, editRequest: string, model: Model, referenceImage?: string, baseImageUrl?: string) {
@@ -719,7 +749,8 @@ export function RedesignWizard() {
       };
       setActiveProject(updatedProject);
       setProjects((current) => [updatedProject, ...current.filter((candidate) => candidate.id !== updatedProject.id)].slice(0, 20));
-      setToast(`${section.name} 수정 완료. 마음에 들면 작업 저장을 눌러주세요.`);
+      setToast(`${section.name} 섹션 수정이 완료되고 자동 저장되었습니다.`);
+      saveCurrentProject(updatedProject, true);
     } catch (error) {
       reportClientLog("edit-section:error", {
         sectionId,
@@ -789,7 +820,7 @@ export function RedesignWizard() {
           </CardContent>
         </Card>
         <div className="mt-auto pt-6 text-[10px] leading-tight text-muted-foreground/50 max-[1120px]:hidden">
-          이 앱은 한이룸의 [상세페이지 리디자인 마법사 1.0]을 리믹스 및 커스터마이징하여 제작되었습니다.
+          이 앱은 한이룸님의 소중한 자료인 [상세페이지 리디자인 마법사 1.0]을 바탕으로, 감사한 마음을 담아 리믹스 및 커스터마이징하여 제작되었습니다.
         </div>
       </aside>
 
@@ -797,7 +828,17 @@ export function RedesignWizard() {
         {view === "dashboard" && (
           <Dashboard
             projects={projects}
-            onNew={() => setView("workspace")}
+            onNew={() => {
+              setFiles([]);
+              setProductInfoText("");
+              setRequest("첫 화면에서 제품의 차별점이 바로 보이게 해주세요. 눈길을 끄는 카피라이팅과 과감하고 시원시원한 히어로 섹션을 제작하세요. 과장 표현은 피하고 와디즈에 맞춰 스캔이 쉬운 구성으로 정리해주세요.");
+              setChannel("스마트스토어");
+              setCount(1);
+              setRatio("9:16");
+              setBackgroundColor("auto");
+              setActiveProject(null);
+              setView("workspace");
+            }}
             onOpenProject={openProject}
             onDeleteProject={deleteProject}
             onSettings={() => setSettingsOpen(true)}
@@ -843,8 +884,9 @@ export function RedesignWizard() {
             onToast={setToast}
             onSave={() => saveCurrentProject(currentProject)}
             onEditSection={editSection}
-                onDeleteRevision={deleteSectionRevision}
+            onDeleteRevision={deleteSectionRevision}
             onGenerateRest={generateRemainingSections}
+            onAddSection={generateAdditionalSection}
             generating={generating}
             editingSectionId={editingSectionId}
           />
@@ -914,7 +956,7 @@ export function RedesignWizard() {
               onChange={(event) => registerKnowledgeFiles(Array.from(event.target.files || []))}
             />
             {knowledgeItems.length > 0 ? (
-              <div className="grid gap-2">
+              <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-1">
                 {knowledgeItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-white p-2 text-xs">
                     <span className="min-w-0 truncate">
@@ -1889,6 +1931,7 @@ function Results({
   onEditSection,
   onDeleteRevision,
   onGenerateRest,
+  onAddSection,
   generating,
   editingSectionId
 }: {
@@ -1900,6 +1943,7 @@ function Results({
   onEditSection: (sectionId: string, editRequest: string, model: Model, referenceImage?: string, baseImageUrl?: string) => void;
   onDeleteRevision: (sectionId: string, revisionId: string) => void;
   onGenerateRest: () => void;
+  onAddSection: () => void;
   generating: boolean;
   editingSectionId: string | null;
 }) {
@@ -1928,6 +1972,7 @@ function Results({
     <section>
       <Topbar eyebrow="RESULTS" title={title}>
         <Button variant="secondary" onClick={onSave}><FileText className="size-4" />작업 저장</Button>
+        <Button variant="secondary" onClick={onAddSection} disabled={generating}><Sparkles className="size-4" />1장 더 추가하기</Button>
         <Button variant="secondary" onClick={() => onToast("히어로 1장 재생성은 다음 단계에서 연결할 예정입니다.")}><RefreshCw className="size-4" />히어로 다시 생성</Button>
         <Button onClick={downloadAllImages} disabled={downloadableSections.length === 0}><Download className="size-4" />전체 다운로드</Button>
       </Topbar>

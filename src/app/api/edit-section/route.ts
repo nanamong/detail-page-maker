@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
 
     const prompt = [
       "너는 커머스 상세페이지 섹션 이미지 편집 엔진이다.",
-      "첨부된 9:16 상세페이지 섹션 이미지를 기반으로 같은 제품과 전체 톤앤매너를 유지하면서 필요한 부분만 편집한다.",
+      "첨부된 9:16 상세페이지 섹션 이미지(첫 번째 이미지)를 기반으로 같은 제품과 전체 톤앤매너를 유지하면서 필요한 부분만 편집한다.",
+      referenceImage ? "중요: 함께 첨부된 추가 이미지(두 번째 이미지)는 사용자가 원하는 수정 방향을 보여주는 '레퍼런스'다. 이 레퍼런스의 레이아웃, 요소 구성, 또는 디자인 느낌을 적극적으로 반영하여 이미지를 수정하라." : "",
       `프로젝트: ${project.title || "상세페이지 제작"}`,
       `판매 채널: ${project.channel || "스마트스토어"}`,
       `섹션: ${section.id || ""} ${section.name || ""}`,
@@ -81,6 +82,9 @@ async function editWithOpenAI({
   form.append("quality", "low");
   form.append("output_format", "png");
   form.append("image[]", new Blob([new Uint8Array(image.buffer)], { type: image.mimeType }), "section.png");
+  if (referenceImage) {
+    form.append("image[]", new Blob([new Uint8Array(referenceImage.buffer)], { type: referenceImage.mimeType }), "reference.png");
+  }
 
   const response = await fetch("https://api.openai.com/v1/images/edits", {
     method: "POST",
