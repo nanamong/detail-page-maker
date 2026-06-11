@@ -787,7 +787,7 @@ export function RedesignWizard() {
           </CardContent>
         </Card>
         <div className="mt-auto pt-6 text-[10px] leading-tight text-muted-foreground/50 max-[1120px]:hidden">
-          이 앱은 한이룸의 [리디자인 마법사 1.0]을 리믹스 및 커스터마이징하여 제작되었습니다.
+          이 앱은 한이룸의 [상세페이지 리디자인 마법사 1.0]을 리믹스 및 커스터마이징하여 제작되었습니다.
         </div>
       </aside>
 
