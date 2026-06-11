@@ -328,12 +328,14 @@ export function RedesignWizard() {
     showWaitVideo = false,
     displayCount = nextCount,
     displayIndex = 1,
-    additionalFiles: File[] = []
+    additionalFiles: File[] = [],
+    existingAnalysis?: unknown,
+    ignoreOriginalFiles = false
   ): Promise<Project | null> {
     const outputCount = typeof nextCount === "number" && Number.isFinite(nextCount) ? nextCount : count;
     const outputRolloutRequest = typeof nextRolloutRequest === "string" ? nextRolloutRequest : "";
 
-    if (files.length === 0 && additionalFiles.length === 0) {
+    if (!ignoreOriginalFiles && files.length === 0 && additionalFiles.length === 0) {
       setToast("기존 상세페이지 이미지 또는 PDF를 먼저 업로드해주세요.");
       setView("workspace");
       return null;
@@ -401,7 +403,9 @@ export function RedesignWizard() {
 
     try {
       const form = new FormData();
-      const uploadFiles = await normalizeFilesForUpload([...files, ...additionalFiles]);
+      const uploadFiles = await normalizeFilesForUpload(
+        ignoreOriginalFiles ? additionalFiles : [...files, ...additionalFiles]
+      );
       if (abortController.signal.aborted) throw new DOMException("생성 요청을 취소했습니다.", "AbortError");
       setToast("원본 분석과 실제 이미지 생성을 시작합니다.");
       const knowledgeText = useSharedKnowledge
@@ -424,6 +428,9 @@ export function RedesignWizard() {
       form.append("rolloutRequest", outputRolloutRequest);
       form.append("openaiKey", openaiKey);
       form.append("googleKey", googleKey);
+      if (existingAnalysis) {
+        form.append("existingAnalysis", JSON.stringify(existingAnalysis));
+      }
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -541,18 +548,25 @@ export function RedesignWizard() {
     let finalAdditionalFiles: File[] = [];
     if (customImage) {
       finalAdditionalFiles.push(customImage);
-    } else if (files.length === 0 && baseProject.sections[0]?.imageUrl) {
-      try {
-        const res = await fetch(baseProject.sections[0].imageUrl);
-        const blob = await res.blob();
-        finalAdditionalFiles.push(new File([blob], "reference.png", { type: blob.type }));
-      } catch (e) {
-        console.error("Fallback reference image fetch error", e);
+    }
+    
+    if (baseProject.sections.length > 0) {
+      const recentSections = baseProject.sections.slice(-3);
+      for (const sec of recentSections) {
+        if (sec.imageUrl && finalAdditionalFiles.length < 4) {
+          try {
+            const res = await fetch(sec.imageUrl);
+            const blob = await res.blob();
+            finalAdditionalFiles.push(new File([blob], `context_${sec.id}.png`, { type: blob.type }));
+          } catch (e) {
+            console.error("Context image fetch error", e);
+          }
+        }
       }
     }
 
     setToast(`S${nextSectionNumber} 섹션을 1장 추가합니다.`);
-    const nextProject = await generate(1, customPrompt, nextSectionNumber, baseProject, false, 1, 1, finalAdditionalFiles);
+    const nextProject = await generate(1, customPrompt, nextSectionNumber, baseProject, false, 1, 1, finalAdditionalFiles, baseProject.analysis, true);
     if (nextProject) {
       setToast("1장 추가가 완료되었습니다.");
     }

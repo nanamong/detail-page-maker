@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
     const startSection = clamp(Number(form.get("startSection") || 1), 1, 10);
     const openaiKey = String(form.get("openaiKey") || "");
     const googleKey = String(form.get("googleKey") || "");
+    const existingAnalysisStr = String(form.get("existingAnalysis") || "");
     const apiKey = provider === "google" ? googleKey : openaiKey;
 
     console.info(`[generate] request provider=${provider} count=${count} startSection=${startSection} files=${files.length} channel=${channel}`);
@@ -84,9 +85,22 @@ export async function POST(request: NextRequest) {
       : "";
     console.info(`[generate] knowledge ready job=${jobId} useKnowledge=${useKnowledge} chars=${retrievedKnowledgeText.length}`);
     const payload = { request: requestText, rolloutRequest, knowledgeText: retrievedKnowledgeText, productInfoText, options: { channel, ratio, count, backgroundColor } };
-    console.info(`[generate] analysis start job=${jobId}`);
-    const analysis = await analyzeSource({ provider, apiKey, references, payload, modelInfo });
-    console.info(`[generate] analysis done job=${jobId}`);
+    
+    let analysis;
+    if (existingAnalysisStr) {
+      try {
+        analysis = JSON.parse(existingAnalysisStr);
+        console.info(`[generate] using existing analysis job=${jobId}`);
+      } catch (e) {
+        console.error("[generate] failed to parse existingAnalysis", e);
+      }
+    }
+
+    if (!analysis) {
+      console.info(`[generate] analysis start job=${jobId}`);
+      analysis = await analyzeSource({ provider, apiKey, references, payload, modelInfo });
+      console.info(`[generate] analysis done job=${jobId}`);
+    }
     const sections = buildSections(count, startSection, payload, analysis, modelInfo);
     const projectTitle = inferProjectTitle(analysis, channel);
 
