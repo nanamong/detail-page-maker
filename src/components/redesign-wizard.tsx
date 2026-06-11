@@ -480,8 +480,9 @@ export function RedesignWizard() {
 
   async function generateRemainingSections() {
     const baseProject = currentProject;
+    const targetCount = baseProject?.count || 8;
     if (!baseProject?.sections.length) {
-      await generate(8, rolloutRequest);
+      await generate(targetCount, rolloutRequest);
       return;
     }
 
@@ -491,7 +492,7 @@ export function RedesignWizard() {
         .map((section) => Number(section.id.replace(/\D/g, "")))
         .filter((sectionNumber) => Number.isFinite(sectionNumber))
     );
-    const missingSections = Array.from({ length: 8 }, (_, index) => index + 1)
+    const missingSections = Array.from({ length: targetCount }, (_, index) => index + 1)
       .filter((sectionNumber) => !existingSectionNumbers.has(sectionNumber));
 
     reportClientLog("generate-rest:start", {
@@ -500,7 +501,7 @@ export function RedesignWizard() {
     });
 
     if (missingSections.length === 0) {
-      setToast("이미 8장 상세페이지가 생성되어 있습니다.");
+      setToast(`이미 ${targetCount}장 상세페이지가 생성되어 있습니다.`);
       return;
     }
 
